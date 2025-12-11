@@ -126,8 +126,9 @@ class UserBrokerConfig(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False, index=True)
     # KIS 앱 인증 정보 (유저별로 각자 발급받은 값)
-    kis_app_key = Column(String(128), nullable=True)     # KIS_APP_KEY
-    kis_app_secret = Column(String(128), nullable=True)  # KIS_APP_SECRET
+    # 일부 계정의 APP_SECRET 이 매우 길 수 있으므로 충분히 크게 잡는다.
+    kis_app_key = Column(String(256), nullable=True)     # KIS_APP_KEY
+    kis_app_secret = Column(String(512), nullable=True)  # KIS_APP_SECRET
 
     # 계좌 식별자
     account_no = Column(String(32), nullable=False)   # 예: "12345678"
