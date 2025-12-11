@@ -81,7 +81,7 @@ def preprocess_stock_daily(
     stock_code: str,
     stock_name: str,
     threshold: float = 0.01,
-    output_dir: str = "'data/preprocessed",
+    output_dir: str = "data/preprocessed",
 ):
     print(f"\n{'='*60}")
     print(f"{stock_name} ({stock_code}) 일봉 분류 전처리")
