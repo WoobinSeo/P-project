@@ -1963,14 +1963,17 @@ def api_trade_auto(payload: dict):
     """
     stock_code = payload.get("stock_code")
 
-    script_path = Path(__file__).parent / "auto_trader.py"
-    if not script_path.exists():
-        raise HTTPException(status_code=500, detail=f"auto_trader 스크립트를 찾을 수 없습니다: {script_path}")
+    # script_path = Path(__file__).parent / "auto_trader.py"
+    # if not script_path.exists():
+    #    raise HTTPException(status_code=500, detail=f"auto_trader 스크립트를 찾을 수 없습니다: {script_path}")
+
+    project_root = Path(__file__).parent.parent
 
     try:
         # sys.executable을 사용하여 현재 FastAPI가 실행 중인 파이썬(대부분 venv)을 그대로 사용
         proc = subprocess.run(
-            [sys.executable, str(script_path)],
+            [sys.executable, "-m", "backend.auto_trader"],
+            cwd=str(project_root),
             capture_output=True,
             text=True,
             timeout=300,
@@ -3316,13 +3319,14 @@ def run_auto_trade_once(
 
         return AutoTradeRunResult(returncode=0, stdout=msg, stderr="")
 
-    script_path = Path(__file__).parent / "auto_trader.py"
-    if not script_path.exists():
-        raise HTTPException(status_code=500, detail=f"auto_trader 스크립트를 찾을 수 없습니다: {script_path}")
+    # script_path = Path(__file__).parent / "auto_trader.py"
+    # if not script_path.exists():
+    #    raise HTTPException(status_code=500, detail=f"auto_trader 스크립트를 찾을 수 없습니다: {script_path}")
 
     try:
         proc = subprocess.run(
-            ["python", str(script_path)],
+            [sys.executable, "-m", "backend.auto_trader"],
+            cwd=str(project_root),
             capture_output=True,
             text=True,
             timeout=300,
