@@ -11,7 +11,7 @@ import pandas as pd
 import yfinance as yf
 from sqlalchemy import text
 
-from db_utils import get_engine
+from backend.db_utils import get_engine
 
 
 STOCKS = [
