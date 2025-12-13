@@ -38,7 +38,6 @@ from backend.database import (
     UserBrokerConfig,
 )
 
-
 app = FastAPI(title="StuckAI Trading API", version="0.1.0")
 
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-me")
@@ -55,6 +54,7 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "http://localhost:4173",
         "http://16.184.2.168:8000",
+        "http://16.184.2.168:5000",
     ],
     allow_credentials=True,
     allow_methods=["*"],
