@@ -25,8 +25,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from jose import jwt
 from pydantic import BaseModel, Field
 
-from kis_broker import KISBroker, KISConfig
-from database import (
+from backend.kis_broker import KISBroker, KISConfig
+from backend.database import (
     DatabaseManager,
     TradeOrder,
     AccountSnapshot,
@@ -42,6 +42,10 @@ from database import (
 app = FastAPI(title="StuckAI Trading API", version="0.1.0")
 
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-me")
+
+# 전역 자동매매 ON/OFF 플래그
+# - React 대시보드 토글 + 스케줄러에서 사용하는 글로벌 스위치
+AUTO_TRADE_ENABLED: bool = False
 
 # React 프론트엔드(예: Vite dev 서버) 연동을 위한 CORS 설정
 app.add_middleware(
@@ -327,6 +331,36 @@ class AutoTradeRunItem(BaseModel):
     returncode: int
 
 
+@app.get("/auto-trade/config", response_model=AutoTradeConfig)
+def get_auto_trade_config():
+    """
+    글로벌 자동매매 ON/OFF 설정 조회.
+
+    - React 대시보드에서 토글 초기값을 읽을 때 사용
+    """
+    return AutoTradeConfig(enabled=AUTO_TRADE_ENABLED)
+
+
+@app.put("/auto-trade/config", response_model=AutoTradeConfig)
+def update_auto_trade_config(
+    body: AutoTradeConfig,
+    x_api_key: Optional[str] = Header(default=None, alias="X-API-Key"),
+):
+    """
+    글로벌 자동매매 ON/OFF 설정 변경.
+
+    - X-API-Key 로 보호
+    - React 대시보드 토글이 이 엔드포인트를 호출
+    """
+    expected_key = os.getenv("API_KEY")
+    if expected_key and x_api_key != expected_key:
+        raise HTTPException(status_code=401, detail="유효하지 않은 API Key 입니다.")
+
+    global AUTO_TRADE_ENABLED
+    AUTO_TRADE_ENABLED = bool(body.enabled)
+    return AutoTradeConfig(enabled=AUTO_TRADE_ENABLED)
+
+
 class SignupRequest(BaseModel):
     username: str
     password: str
@@ -353,6 +387,9 @@ class BrokerConfigIn(BaseModel):
     real_mode: bool = Field(
         False, description="실거래 여부 (False: 모의투자, True: 실전계좌)"
     )
+    auto_trade_enabled: bool = Field(
+        False, description="자동매매 ON/OFF (True: ON, False: OFF)"
+    )
 
 
 class BrokerConfigOut(BaseModel):
@@ -362,6 +399,13 @@ class BrokerConfigOut(BaseModel):
     account_no_masked: Optional[str] = None
     account_code: Optional[str] = None
     real_mode: Optional[bool] = None
+    auto_trade_enabled: Optional[bool] = None
+
+
+class AutoTradeConfig(BaseModel):
+    """글로벌 자동매매 ON/OFF 설정"""
+
+    enabled: bool
 
 
 def _mask_account_no(account_no: str) -> str:
@@ -1528,6 +1572,7 @@ def get_my_broker_config(token: str):
             account_no_masked=None,
             account_code=None,
             real_mode=None,
+            auto_trade_enabled=None,
         )
 
     return BrokerConfigOut(
@@ -1535,6 +1580,7 @@ def get_my_broker_config(token: str):
         account_no_masked=_mask_account_no(cfg.account_no),
         account_code=cfg.account_code,
         real_mode=cfg.real_mode,
+        auto_trade_enabled=cfg.auto_trade_enabled,
     )
 
 
@@ -1552,6 +1598,7 @@ def upsert_my_broker_config(token: str, body: BrokerConfigIn):
     kis_app_key = body.kis_app_key.strip()
     kis_app_secret = body.kis_app_secret.strip()
     real_mode = bool(body.real_mode)
+    auto_trade_enabled = bool(body.auto_trade_enabled)
 
     # 계좌번호/상품코드/앱키/시크릿 모두 필수
     if not account_no or not account_code or not kis_app_key or not kis_app_secret:
@@ -1576,6 +1623,7 @@ def upsert_my_broker_config(token: str, body: BrokerConfigIn):
                 account_no=account_no,
                 account_code=account_code,
                 real_mode=real_mode,
+                auto_trade_enabled=auto_trade_enabled,
             )
         else:
             cfg.kis_app_key = kis_app_key
@@ -1583,6 +1631,7 @@ def upsert_my_broker_config(token: str, body: BrokerConfigIn):
             cfg.account_no = account_no
             cfg.account_code = account_code
             cfg.real_mode = real_mode
+            cfg.auto_trade_enabled = auto_trade_enabled
 
         session.add(cfg)
         session.commit()
@@ -1598,6 +1647,7 @@ def upsert_my_broker_config(token: str, body: BrokerConfigIn):
         account_no_masked=_mask_account_no(cfg.account_no),
         account_code=cfg.account_code,
         real_mode=cfg.real_mode,
+        auto_trade_enabled=cfg.auto_trade_enabled,
     )
 
 
@@ -3244,6 +3294,28 @@ def run_auto_trade_once(
     expected_key = os.getenv("API_KEY")
     if expected_key and x_api_key != expected_key:
         raise HTTPException(status_code=401, detail="유효하지 않은 API Key 입니다.")
+
+    # 글로벌 자동매매 스위치 확인
+    if not AUTO_TRADE_ENABLED:
+        msg = "AUTO_TRADE_ENABLED=False 상태라 auto_trader 실행을 건너뜁니다."
+
+        # 스킵한 것도 히스토리로 남겨둔다.
+        db = get_db()
+        session = db.get_session()
+        try:
+            run = AutoTradeRun(
+                returncode=0,
+                stdout=msg,
+                stderr="",
+            )
+            session.add(run)
+            session.commit()
+        except Exception:
+            session.rollback()
+        finally:
+            session.close()
+
+        return AutoTradeRunResult(returncode=0, stdout=msg, stderr="")
 
     script_path = Path(__file__).parent / "auto_trader.py"
     if not script_path.exists():

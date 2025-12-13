@@ -137,6 +137,9 @@ class UserBrokerConfig(Base):
     # 모의/실거래 모드 플래그 (False = 모의, True = 실전)
     real_mode = Column(Boolean, default=False, nullable=False)
 
+    # 자동매매 ON/OFF 플래그 (False = OFF, True = ON)
+    auto_trade_enabled = Column(Boolean, default=False, nullable=False)
+
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 

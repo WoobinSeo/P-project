@@ -7,7 +7,7 @@ user_broker_configs.kis_app_key / kis_app_secret 컬럼 길이를
 
 from sqlalchemy import text
 
-from database import DatabaseManager
+from backend.database import DatabaseManager
 
 
 def main() -> None:

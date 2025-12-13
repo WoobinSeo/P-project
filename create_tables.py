@@ -1,8 +1,9 @@
 """
 PostgreSQL 테이블 생성 스크립트
 """
-from database import DatabaseManager
 import sys
+
+from backend.database import DatabaseManager
 
 
 def main():

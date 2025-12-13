@@ -7,7 +7,7 @@ user_broker_configs 테이블에 새 컬럼(kis_app_key, kis_app_secret, real_mo
 
 from sqlalchemy import text
 
-from database import DatabaseManager
+from backend.database import DatabaseManager
 
 
 def main() -> None:
@@ -33,5 +33,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
 
 

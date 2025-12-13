@@ -32,6 +32,7 @@ class KISConfig:
     tr_id_order_cash_buy: str = ""
     tr_id_order_cash_sell: str = ""
     tr_id_inquire_balance: str = ""
+    tr_id_inquire_price: str = ""
 
     @classmethod
     def from_env(cls) -> "KISConfig":
@@ -46,6 +47,7 @@ class KISConfig:
         tr_buy = os.getenv("KIS_TR_ID_ORDER_CASH_BUY", "")
         tr_sell = os.getenv("KIS_TR_ID_ORDER_CASH_SELL", "")
         tr_bal = os.getenv("KIS_TR_ID_INQUIRE_BALANCE", "")
+        tr_price = os.getenv("KIS_TR_ID_INQUIRE_PRICE", "")
 
         if not app_key or not app_secret:
             raise ValueError("KIS_APP_KEY / KIS_APP_SECRET 이 .env 에 설정되어야 합니다.")
@@ -61,6 +63,7 @@ class KISConfig:
             tr_id_order_cash_buy=tr_buy,
             tr_id_order_cash_sell=tr_sell,
             tr_id_inquire_balance=tr_bal,
+            tr_id_inquire_price=tr_price,
         )
 
 
@@ -270,6 +273,46 @@ class KISBroker:
 
         if resp.status_code != 200 or js.get("rt_cd") not in (None, "0"):
             raise RuntimeError(f"KIS 잔고 조회 실패: status={resp.status_code}, body={js}")
+
+        return js
+
+    # ------------------------------------------------------------------ #
+    # 시세 조회 (실시간 호가/현재가)
+    # ------------------------------------------------------------------ #
+    def get_price(self, stock_code: str, tr_id_override: Optional[str] = None) -> Dict[str, Any]:
+        """
+        단일 종목 현재가/시세 조회.
+
+        - KIS `국내주식 현재가 시세(주식)` REST API 사용
+        - TR ID 는 .env 의 KIS_TR_ID_INQUIRE_PRICE 에서 읽어온다.
+        """
+        url = f"{self.base_url}/uapi/domestic-stock/v1/quotations/inquire-price"
+
+        if tr_id_override:
+            tr_id = tr_id_override
+        else:
+            tr_id = self.config.tr_id_inquire_price
+
+        if not tr_id:
+            raise ValueError(
+                "시세 조회 TR ID 가 설정되지 않았습니다. "
+                "KIS_TR_ID_INQUIRE_PRICE 환경변수를 확인하세요."
+            )
+
+        headers = self._headers(tr_id)
+        params = {
+            "FID_COND_MRKT_DIV_CODE": "J",  # 주식
+            "FID_INPUT_ISCD": stock_code,   # 6자리 종목코드
+        }
+
+        resp = requests.get(url, headers=headers, params=params)
+        try:
+            js = resp.json()
+        except Exception:
+            js = {"raw": resp.text}
+
+        if resp.status_code != 200 or js.get("rt_cd") not in (None, "0"):
+            raise RuntimeError(f"KIS 시세 조회 실패: status={resp.status_code}, body={js}")
 
         return js
 

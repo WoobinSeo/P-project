@@ -44,3 +44,4 @@ def load_config_stocks(config_path: str = "config.yaml") -> List[Dict[str, Any]]
 
 
 
+
