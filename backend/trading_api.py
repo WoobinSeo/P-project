@@ -3323,6 +3323,8 @@ def run_auto_trade_once(
     # if not script_path.exists():
     #    raise HTTPException(status_code=500, detail=f"auto_trader 스크립트를 찾을 수 없습니다: {script_path}")
 
+    project_root = Path(__file__).parent.parent
+    
     try:
         proc = subprocess.run(
             [sys.executable, "-m", "backend.auto_trader"],
