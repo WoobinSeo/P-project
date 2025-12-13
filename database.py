@@ -215,7 +215,7 @@ class DatabaseManager:
         self.password = os.getenv('DB_PASSWORD', '')
         
         # 연결 문자열
-        self.connection_string = f'postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}'
+        self.connection_string = f'postgresql+pg8000://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}'
         
         # 엔진 생성
         self.engine = None
