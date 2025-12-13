@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import os
+import time
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
@@ -293,6 +294,8 @@ def run_hourly_trading():
             print(f"  KIS 응답 요약: rt_cd={res.get('rt_cd')}, msg1={res.get('msg1')}")
         except Exception as e:
             print(f"  주문 실패: {e}")
+
+        time.sleep(0.5)
 
     print("\n==============================")
     print("  시간 단위 자동 매매 루틴 종료")
