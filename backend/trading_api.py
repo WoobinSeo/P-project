@@ -301,6 +301,11 @@ class OrderHistoryItem(BaseModel):
     order_amount: Optional[float]
     status: str
 
+class AutoTradeConfig(BaseModel):
+    """글로벌 자동매매 ON/OFF 설정"""
+
+    enabled: bool
+
 
 class RiskSettingIn(BaseModel):
     max_position_shares: Optional[int] = None
@@ -400,12 +405,6 @@ class BrokerConfigOut(BaseModel):
     account_code: Optional[str] = None
     real_mode: Optional[bool] = None
     auto_trade_enabled: Optional[bool] = None
-
-
-class AutoTradeConfig(BaseModel):
-    """글로벌 자동매매 ON/OFF 설정"""
-
-    enabled: bool
 
 
 def _mask_account_no(account_no: str) -> str:
