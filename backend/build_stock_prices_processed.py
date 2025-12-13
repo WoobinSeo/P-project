@@ -16,8 +16,8 @@ from typing import List, Dict, Any
 import pandas as pd
 from sqlalchemy import text
 
-from db_utils import get_engine, load_config_stocks
-from technical_indicators import TechnicalIndicators
+from backend.db_utils import get_engine, load_config_stocks
+from backend.technical_indicators import TechnicalIndicators
 
 
 def load_daily_from_db(engine, stock_code: str) -> pd.DataFrame:
