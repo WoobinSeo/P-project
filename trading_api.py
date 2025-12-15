@@ -3400,7 +3400,7 @@ def run_auto_trade_once(
     try:
      proc = subprocess.run(
     [sys.executable, "auto_trader.py"],
-    cwd=str(project_root),
+    cwd="/home/ubuntu/P-project",
     capture_output=True,
     text=True,
     timeout=300,
