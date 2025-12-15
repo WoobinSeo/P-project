@@ -3399,7 +3399,7 @@ def run_auto_trade_once(
 
     try:
      proc = subprocess.run(
-    [sys.executable, "-m", "backend.auto_trader"],
+    [sys.executable, "-m", "auto_trader"],
     cwd=str(project_root),
     capture_output=True,
     text=True,
